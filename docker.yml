@@ -16,4 +16,4 @@
     - name: Reiniciar servicio MySQL
       service:
         name: mysql
-        state: restart
+        state: restarted
