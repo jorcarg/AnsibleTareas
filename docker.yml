@@ -13,12 +13,6 @@
         name: mysql-server
         state: present
 
-    - name: Configurar MySQL
-      lineinfile:
-        path: /etc/mysql/mysql.conf.d/mysql.cnf
-        regexp: '^bind-address\s*='
-        line: 'bind-address = 0.0.0.0'
-
     - name: Reiniciar servicio MySQL
       service:
         name: mysql
