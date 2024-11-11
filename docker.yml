@@ -1,28 +1,37 @@
 ---
-- name: Playbook para instalar MySQL en Ubuntu
-  hosts: all
+- name: Instalar y configurar MySQL en Ubuntu
+  hosts: all  # Reemplaza 'all' con tu grupo de hosts
   become: yes
-  vars:
-    mysql_root_password: "Huawei1234"
 
   tasks:
-    - name: Instalar MySQL Server
+    - name: Actualizar la lista de paquetes
+      apt:
+        update_cache: yes
+
+    - name: Instalar el servidor MySQL
       apt:
         name: mysql-server
         state: present
 
-    - name: Configurar la contraseña root de MySQL y asegurar la instalación
-      shell: |
-        sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '{{ mysql_root_password }}';"
-        sudo mysql -e "DELETE FROM mysql.user WHERE User='';"
-        sudo mysql -e "DROP DATABASE IF EXISTS test;"
-        sudo mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-        sudo mysql -e "FLUSH PRIVILEGES;"
-      args:
-        executable: /bin/bash
+    - name: Configurar el archivo de configuración de MySQL
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysql.cnf
+        regexp: '^bind-address\s*='
+        line: 'bind-address = 0.0.0.0'
 
-    - name: Iniciar y habilitar el servicio de MySQL
+    - name: Reiniciar el servicio de MySQL
       service:
         name: mysql
-        state: started
-        enabled: yes
+        state: restarted
+
+    - name: Establecer la contraseña root de MySQL
+      mysql_user:
+        name: root
+        password: tu_contraseña_segura
+        host: '%'
+        priv: ALL PRIVILEGES
+
+    - name: Crear una base de datos (opcional)
+      mysql_db:
+        name: mi_base_de_datos
+        owner: tu_usuario
