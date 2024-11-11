@@ -6,10 +6,6 @@
     mysql_root_password: "Huawei1234"
 
   tasks:
-    - name: Actualizar la lista de paquetes
-      apt:
-        update_cache: yes
-
     - name: Instalar MySQL Server
       apt:
         name: mysql-server
