@@ -1,6 +1,6 @@
 ---
 - name: Playbook para instalar MySQL en Ubuntu
-  hosts: 192.168.171.162
+  hosts: all
   become: yes
   vars:
     mysql_root_password: "Huawei1234"
