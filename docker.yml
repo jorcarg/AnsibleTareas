@@ -1,29 +1,25 @@
 ---
 - name: Instalar y configurar MySQL en Ubuntu
   hosts: all  # Reemplaza 'all' con tu grupo de hosts
-  become: yes
+  become: yes  # Se utiliza aquí para garantizar que todo el playbook se ejecute con privilegios elevados
 
   tasks:
     - name: Actualizar la lista de paquetes
       apt:
         update_cache: yes
-      become: true
 
     - name: Instalar el servidor MySQL
       apt:
         name: mysql-server
         state: present
-      become: true
 
     - name: Configurar el archivo de configuración de MySQL
       lineinfile:
         path: /etc/mysql/mysql.conf.d/mysql.cnf
         regexp: '^bind-address\s*='
         line: 'bind-address = 0.0.0.0'
-      become: true
 
     - name: Reiniciar el servicio de MySQL
       service:
         name: mysql
         state: restarted
-      become: true
