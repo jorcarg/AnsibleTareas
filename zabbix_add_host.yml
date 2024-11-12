@@ -1,0 +1,71 @@
+---
+- name: Configurar host en Zabbix
+  hosts: localhost
+  gather_facts: no
+  vars:
+    zabbix_url: "http://192.168.171.160/zabbix/api_jsonrpc.php"
+    zabbix_user: "Administrador"  # Usuario de la API de Zabbix
+    zabbix_password: "Huawei1234"  # Contraseña de la API de Zabbix
+    new_host_ip: "192.168.1.165"  # IP del nuevo host
+    new_host_name: "Host_Prueba"   # Nombre del nuevo host
+    host_group: "Linux servers"    # Grupo al cual agregar el host
+    template_name: "Template OS Linux by Zabbix agent"  # Template a aplicar
+
+  tasks:
+    - name: Obtener token de autenticación
+      uri:
+        url: "{{ zabbix_url }}"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body:
+          jsonrpc: "2.0"
+          method: "user.login"
+          params:
+            user: "{{ zabbix_user }}"
+            password: "{{ zabbix_password }}"
+          id: 1
+      register: auth_response
+      changed_when: no
+
+    - name: Verificar token de autenticación
+      fail:
+        msg: "Error de autenticación en la API de Zabbix."
+      when: auth_response.json.error is defined
+
+    - name: Añadir host a Zabbix
+      uri:
+        url: "{{ zabbix_url }}"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body:
+          jsonrpc: "2.0"
+          method: "host.create"
+          params:
+            host: "{{ new_host_name }}"
+            interfaces:
+              - type: 1
+                main: 1
+                useip: 1
+                ip: "{{ new_host_ip }}"
+                dns: ""
+                port: "10050"
+            groups:
+              - groupid: "{{ host_group_id }}"
+            templates:
+              - templateid: "{{ template_id }}"
+          auth: "{{ auth_response.json.result }}"
+          id: 1
+      register: host_create_response
+
+    - name: Verificar creación de host
+      fail:
+        msg: "No se pudo crear el host en Zabbix."
+      when: host_create_response.json.error is defined
+
+    - name: Confirmación de host creado
+      debug:
+        msg: "El host ha sido creado exitosamente con el ID {{ host_create_response.json.result.hostids[0] }}."
