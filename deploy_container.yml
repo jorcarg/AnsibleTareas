@@ -3,21 +3,22 @@
   hosts: all
   become: true
   tasks:
-    - name: Actualizar el caché de APT y sistema
+    - name: Actualizar el caché de APT
       apt:
         update_cache: yes
-        upgrade: dist
 
-    - name: Limpiar paquetes innecesarios y retenidos
+    - name: Eliminar paquetes conflictivos de Docker y Containerd
       apt:
-        name: "*"
+        name:
+          - docker.io
+          - containerd
+          - containerd.io
         state: absent
+        purge: yes
+
+    - name: Limpiar dependencias innecesarias
+      apt:
         autoremove: yes
-
-    - name: Eliminar containerd si está instalado
-      apt:
-        name: containerd
-        state: absent
 
     - name: Instalar paquetes necesarios para usar el repositorio de Docker
       apt:
@@ -52,4 +53,3 @@
         name: docker
         state: started
         enabled: true
-
