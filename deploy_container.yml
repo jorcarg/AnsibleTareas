@@ -1,0 +1,40 @@
+---
+- name: Despliegue de un contenedor Docker
+  hosts: all  # Define el grupo de hosts o el host donde se ejecutará el contenedor
+  become: true  # Se requiere sudo para gestionar Docker
+  vars:
+    container_name: "nginx_container"
+    image_name: "nginx:latest"
+    ports:
+      - "80:80"  # Mapear el puerto 80 del host al contenedor
+
+  tasks:
+    - name: Asegurarse de que Docker esté instalado
+      apt:
+        name: docker.io
+        state: present
+      become: true  # Instalar Docker con privilegios elevados
+      when: ansible_os_family == "Debian"
+
+    - name: Iniciar el servicio de Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Desplegar el contenedor de Nginx
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        ports: "{{ ports }}"
+        state: started
+        restart_policy: always
+
+    - name: Verificar que el contenedor esté en ejecución
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: container_info
+
+    - name: Mostrar información del contenedor desplegado
+      debug:
+        var: container_info
