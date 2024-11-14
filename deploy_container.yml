@@ -1,40 +1,55 @@
 ---
-- name: Despliegue de un contenedor Docker
-  hosts: all  # Define el grupo de hosts o el host donde se ejecutará el contenedor
-  become: true  # Se requiere sudo para gestionar Docker
-  vars:
-    container_name: "nginx_container"
-    image_name: "nginx:latest"
-    ports:
-      - "80:80"  # Mapear el puerto 80 del host al contenedor
-
+- name: Instalar Docker en un servidor Ubuntu
+  hosts: all
+  become: true
   tasks:
-    - name: Asegurarse de que Docker esté instalado
+    - name: Actualizar el caché de APT y sistema
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Limpiar paquetes innecesarios y retenidos
+      apt:
+        name: "*"
+        state: absent
+        autoremove: yes
+
+    - name: Eliminar containerd si está instalado
+      apt:
+        name: containerd
+        state: absent
+
+    - name: Instalar paquetes necesarios para usar el repositorio de Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Añadir la clave GPG oficial de Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Añadir el repositorio de Docker
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Actualizar el caché de APT después de añadir el repositorio de Docker
+      apt:
+        update_cache: yes
+
+    - name: Instalar Docker
       apt:
         name: docker.io
-        state: present
-      become: true  # Instalar Docker con privilegios elevados
-      when: ansible_os_family == "Debian"
+        state: latest
 
-    - name: Iniciar el servicio de Docker
+    - name: Iniciar y habilitar el servicio Docker
       service:
         name: docker
         state: started
         enabled: true
 
-    - name: Desplegar el contenedor de Nginx
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        image: "{{ image_name }}"
-        ports: "{{ ports }}"
-        state: started
-        restart_policy: always
-
-    - name: Verificar que el contenedor esté en ejecución
-      community.docker.docker_container_info:
-        name: "{{ container_name }}"
-      register: container_info
-
-    - name: Mostrar información del contenedor desplegado
-      debug:
-        var: container_info
